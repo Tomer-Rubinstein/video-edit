@@ -1,0 +1,5 @@
+/home/t0m3r/Projects/video-edit/CMakeFiles/rebuild_cache.dir
+/home/t0m3r/Projects/video-edit/CMakeFiles/edit_cache.dir
+/home/t0m3r/Projects/video-edit/CMakeFiles/video-edit.dir
+/home/t0m3r/Projects/video-edit/lib/FFmpeg/CMakeFiles/rebuild_cache.dir
+/home/t0m3r/Projects/video-edit/lib/FFmpeg/CMakeFiles/edit_cache.dir

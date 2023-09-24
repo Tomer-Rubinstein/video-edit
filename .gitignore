@@ -1,0 +1,4 @@
+video-edit
+*.cmake
+CMakeCache.txt
+Makefile

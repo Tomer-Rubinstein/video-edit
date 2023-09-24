@@ -1,0 +1,1 @@
+/usr/bin/c++    -lavcodec -lavformat -lavfilter -lavdevice -lavutil -lswresample -lswscale CMakeFiles/video-edit.dir/src/main.cpp.o  -o video-edit 
