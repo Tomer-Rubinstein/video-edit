@@ -6,5 +6,10 @@ add_subdirectory(lib/FFmpeg)
 
 add_definitions(-DGL_SILENCE_DEPRECATION)
 
-add_executable(video-edit src/main.cpp)
+list(APPEND SOURCES
+    src/main.cpp
+    src/load_frame.cpp
+)
+
+add_executable(video-edit ${SOURCES})
 target_link_libraries(video-edit FFmpeg)

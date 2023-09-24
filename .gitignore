@@ -1,4 +1,2 @@
-video-edit
-*.cmake
-CMakeCache.txt
-Makefile
+/sample-input
+/build
