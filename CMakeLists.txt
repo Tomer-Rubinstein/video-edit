@@ -10,6 +10,7 @@ list(APPEND SOURCES
     src/main.cpp
     src/video.cpp
     src/load_videos.cpp
+    src/edit.cpp
 )
 
 add_executable(video-edit ${SOURCES})
