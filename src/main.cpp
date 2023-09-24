@@ -1,14 +1,22 @@
 #include <iostream>
 
-bool load_frame(const char* filename, int* width, int* height, unsigned char** data);
+#include "video.h"
+#include "load_videos.h"
 
 int main(){
-    int frame_width, frame_height;
-    unsigned char* frame_data;
-    
-    if (!load_frame("../sample-input/videos/v1", &frame_width, &frame_height, &frame_data)) {
-        std::cout << "[ERROR] Couldn't load video frame" << std::endl;
+    std::list<Video*> videos_list;
+    std::string videos_dir = "../sample-input/videos";
+
+    if (!load_videos(videos_dir, &videos_list)) {
+        std::cout << "[ERROR] Couldn't load videos in directory: " << videos_dir << std::endl;
         return 1;
+    }
+
+    std::list<Video*>::iterator iter;
+    for (iter=videos_list.begin(); iter!=videos_list.end(); iter++){
+        std::cout << "Filename: " << (*iter)->getFilename() << std::endl;
+        std::cout << "Duration: " << (*iter)->getDuration() << std::endl;
+        std::cout << "--------" << std::endl;
     }
 
     return 0;
