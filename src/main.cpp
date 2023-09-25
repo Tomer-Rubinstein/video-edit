@@ -10,7 +10,7 @@ std::list<float> calc_durations(float timestamps[], int size);
 int main(){
     /* INPUT */
     std::string videos_dir = "../sample-input/videos";
-    float timestamps[8] = {
+    float timestamps[8] = { // TODO: change ds
         0.0,
         8.539,
         12.0,
@@ -34,6 +34,9 @@ int main(){
     for (auto &elem : result_sequence) {
         std::cout << elem->getFilename() << std::endl;
     }
+
+    std::list<std::string> cuts_filenames = cut_videos(distances_list, result_sequence);
+    merge_videos(cuts_filenames);
 
     return 0;
 }
