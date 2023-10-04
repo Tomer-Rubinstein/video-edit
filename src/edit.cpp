@@ -1,5 +1,4 @@
 #include <iostream>
-#include <list>
 #include <vector>
 #include "video.h"
 
@@ -8,42 +7,7 @@ extern "C" {
     #include <libavformat/avformat.h>
 }
 
-
-std::list<Video*> assignTimestamps(std::list<float> distances, std::list<Video*> vids_list){
-    std::list<float>::iterator distsIter;
-    std::list<Video*>::iterator vidsIter;
-
-    std::list<Video*> result_sequence;
-
-    for (distsIter = distances.begin(); distsIter != distances.end(); distsIter++) {
-        Video* candidateVid = NULL;
-
-        for (vidsIter = vids_list.begin(); vidsIter != vids_list.end(); vidsIter++) {
-            float currDuration = (*vidsIter)->getDuration();
-
-            if (currDuration - *distsIter >= 0) {
-                if (candidateVid == NULL)
-                    candidateVid = *vidsIter;
-                else if (currDuration < candidateVid->getDuration())
-                    candidateVid = *vidsIter;
-            }
-        }
-
-        if (candidateVid == NULL){
-            std::cout << "[ERROR] Couldn't find a sequence of videos that satisfy the given timestamps" << std::endl;
-            exit(1);
-        }
-
-        vids_list.remove(candidateVid);
-        result_sequence.push_back(candidateVid);
-    }
-
-    return result_sequence;
-}
-
-
 void cut_video(std::string filename, float start_time, float end_time, std::string output_filename, AVFormatContext **output_format_context) {
-    // find video stream
     AVFormatContext *input_format_context = avformat_alloc_context();
     if (!input_format_context) {
         std::cout << "[ERROR] Couldn't allocate AVFormatContext" << std::endl;
@@ -184,18 +148,15 @@ void cut_video(std::string filename, float start_time, float end_time, std::stri
 }
 
 
-std::list<std::string> cut_videos(std::list<float> distances, std::list<Video*> result_sequence) {
+std::vector<std::string> cut_videos(std::vector<float> distances, std::vector<Video*> result_sequence) {
     auto list_dists_front = distances.begin();
 
-    std::list<std::string> cuts_filenames;
+    std::vector<std::string> cuts_filenames;
 
-    int DEBUG = 0;
     int cutted_vid_count = 1;
-
     for (Video* vid : result_sequence) {
         float start_time = 0;
         float end_time = *list_dists_front;
-
 
         std::string output_filename = "cutted_vid";
         output_filename += std::to_string(cutted_vid_count++);
@@ -210,81 +171,7 @@ std::list<std::string> cut_videos(std::list<float> distances, std::list<Video*> 
         cut_video(vid->getFilename(), start_time, end_time, output_filename, &output_cut_format_ctx);
 
         std::advance(list_dists_front, 1);
-        if (DEBUG++ == 1)
-            break;
     }
 
     return cuts_filenames;
-}
-
-int64_t last_dts = 0;
-int64_t last_pts = 0;
-
-void merge_video(std::string cut_filename, AVFormatContext **output_format_ctx) {
-    AVFormatContext* input_format_ctx = avformat_alloc_context();
-    avformat_open_input(&input_format_ctx, cut_filename.c_str(), nullptr, nullptr);
-
-
-    AVPacket packet;
-    while (av_read_frame(input_format_ctx, &packet) >= 0) {
-        std::cout << "incoming packet with dts " << packet.dts << std::endl;
-
-        if (packet.dts < last_dts) {
-            packet.dts = last_dts + packet.duration;
-        }
-        if (packet.pts < last_pts) {
-            packet.pts = last_pts + packet.duration;
-        }
-
-        std::cout << "but i will set dts to " << packet.dts << std::endl;
-
-        (*output_format_ctx)->oformat->flags |= AVFMT_NOTIMESTAMPS;
-        int res = av_write_frame(*output_format_ctx, &packet);
-        last_dts = packet.dts;
-        last_pts = packet.pts;
-    }
-
-    
-}
-
-void merge_videos(std::list<std::string> cuts_filenames) {
-    std::string output_filename = "output.mp4";
-
-    AVFormatContext *output_format_ctx = avformat_alloc_context();
-
-    /* set the muxer */
-    output_format_ctx->oformat = av_guess_format(NULL, output_filename.c_str(), NULL);
-
-    /* create output file */
-    avio_open2(&output_format_ctx->pb, output_filename.c_str(), AVIO_FLAG_WRITE, NULL, NULL);
-    // std::cout << (output_format_ctx->oformat->flags == AVFMT_NOSTREAMS) << std::endl;
-
-    /* get sample input format context, just to copy output params */
-    AVFormatContext *input_format_ctx = avformat_alloc_context();
-    avformat_open_input(&input_format_ctx, "cutted_vid1.mp4", NULL, NULL);
-
-    /* create at least one stream for the output file */
-    AVStream *input_stream = input_format_ctx->streams[0];
-    AVStream *output_stream = avformat_new_stream(output_format_ctx, input_stream->codec->codec);
-    avcodec_copy_context(output_stream->codec, input_stream->codec);
-    output_stream->codec->codec_tag = 0;
-    output_stream->codec->codec_type = input_stream->codec->codec_type;
-    output_stream->codec->codec_id = input_stream->codec->codec_id;
-    output_stream->time_base = input_stream->time_base; // same timebases
-
-    /* initialize the muxer internals and write the file's header */
-    avformat_write_header(output_format_ctx, 0);
-
-
-    std::cout << "appending cutted_vid1.mp4" << std::endl;
-    merge_video("cutted_vid1.mp4", &output_format_ctx);
-
-    std::cout << "appending cutted_vid2.mp4" << std::endl;
-    merge_video("cutted_vid2.mp4", &output_format_ctx);
-
-
-    av_write_trailer(output_format_ctx);
-
-    avformat_free_context(output_format_ctx);
-    avformat_free_context(input_format_ctx);
 }

@@ -11,6 +11,9 @@ list(APPEND SOURCES
     src/video.cpp
     src/load_videos.cpp
     src/edit.cpp
+    src/concat_demuxer.cpp
+    src/calc_durations.cpp
+    src/assign_timestamps.cpp
 )
 
 add_executable(video-edit ${SOURCES})

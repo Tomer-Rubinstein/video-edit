@@ -1,16 +1,16 @@
 #include <iostream>
-#include <list>
 
 #include "video.h"
 #include "load_videos.h"
 #include "edit.h"
-
-std::list<float> calc_durations(float timestamps[], int size);
+#include "concat_demuxer.h"
+#include "calc_durations.h"
+#include "assign_timestamps.h"
 
 int main(){
     /* INPUT */
     std::string videos_dir = "../sample-input/videos";
-    float timestamps[8] = { // TODO: change ds
+    std::vector<float> timestamps = {
         0.0,
         8.539,
         12.0,
@@ -22,33 +22,14 @@ int main(){
     };
     /* END INPUT */
 
-    std::list<Video*> videos_list;
-    if (!load_videos(videos_dir, &videos_list)) {
-        std::cout << "[ERROR] Couldn't load videos in directory: " << videos_dir << std::endl;
-        return 1;
-    }
-    std::list<float> distances_list = calc_durations(timestamps, 8);
+    std::vector<Video*> videos_list = load_videos(videos_dir);
+    std::vector<float> durations_list = calc_durations(timestamps);
+    std::vector<Video*> matching_sequence = assign_timestamps(durations_list, videos_list);
 
-    /* DEBUG */
-    std::list<Video*> result_sequence = assignTimestamps(distances_list, videos_list);
-    for (auto &elem : result_sequence) {
-        std::cout << elem->getFilename() << std::endl;
-    }
+    std::vector<std::string> cuts_filenames = cut_videos(durations_list, matching_sequence);
+    ConcatDemuxer *concat_demuxer = new ConcatDemuxer(cuts_filenames);
 
-    // std::list<std::string> cuts_filenames = cut_videos(distances_list, result_sequence);
-    std::list<std::string> cuts_filenames;
-    merge_videos(cuts_filenames);
+    concat_demuxer->merge_videos("output.mp4");
 
     return 0;
 }
-
-
-std::list<float> calc_durations(float timestamps[], int size){
-    std::list<float> distances;
-
-    for (int i=1; i < size; i++)
-        distances.push_back(timestamps[i] - timestamps[i-1]);
-
-    return distances;
-}
-
