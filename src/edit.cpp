@@ -128,7 +128,6 @@ void cut_video(std::string filename, float start_time, float end_time, std::stri
     default_timebase.num = 1;
     default_timebase.den = AV_TIME_BASE;
 
-
     int64_t start_time_int64 = av_rescale_q((int64_t)(start_time*AV_TIME_BASE), default_timebase, video_stream->time_base);
     int64_t end_time_int64 = av_rescale_q((int64_t)(end_time*AV_TIME_BASE), default_timebase, video_stream->time_base);
 
@@ -167,7 +166,6 @@ void cut_video(std::string filename, float start_time, float end_time, std::stri
             }
         }
 
-
         if (frame->pts > end_time_int64) {
             // found all the frames I want in the cut, no need to search for more.
             break;
@@ -180,9 +178,9 @@ void cut_video(std::string filename, float start_time, float end_time, std::stri
         exit(1);
     }
 
-    // avformat_close_input(&input_format_context);
-    // avio_close(output_format_context->pb);
-    // avformat_free_context(output_format_context);
+    avformat_close_input(&input_format_context);
+    avio_close((*output_format_context)->pb);
+    avformat_free_context(*output_format_context);
 }
 
 
@@ -219,89 +217,74 @@ std::list<std::string> cut_videos(std::list<float> distances, std::list<Video*> 
     return cuts_filenames;
 }
 
-// void merge_video(std::string cut_filename, std::string output_filename, AVFormatContext **outputFormatContext) {
-void merge_video(){
-    // ONLY APPEND TWO VIDEO FILES
-    AVFormatContext* inputFormatContext1 = nullptr;
-    AVFormatContext* inputFormatContext2 = nullptr;
+int64_t last_dts = 0;
+int64_t last_pts = 0;
 
-    if (avformat_open_input(&inputFormatContext1, "cutted_vid1.mp4", nullptr, nullptr) < 0) {
-        // Handle error
-    }
+void merge_video(std::string cut_filename, AVFormatContext **output_format_ctx) {
+    AVFormatContext* input_format_ctx = avformat_alloc_context();
+    avformat_open_input(&input_format_ctx, cut_filename.c_str(), nullptr, nullptr);
 
-    if (avformat_open_input(&inputFormatContext2, "cutted_vid2.mp4", nullptr, nullptr) < 0) {
-        // Handle error
-    }
-
-    if (avformat_find_stream_info(inputFormatContext1, nullptr) < 0) {
-        // Handle error
-    }
-
-    if (avformat_find_stream_info(inputFormatContext2, nullptr) < 0) {
-        // Handle error
-    }
-
-    AVFormatContext* outputFormatContext = nullptr;
-
-    if (avformat_alloc_output_context2(&outputFormatContext, nullptr, nullptr, "output.mp4") < 0) {
-        // Handle error
-    }
-
-    for (int i = 0; i < inputFormatContext1->nb_streams; i++) {
-        AVStream* inputStream = inputFormatContext1->streams[i];
-        AVStream* outputStream = avformat_new_stream(outputFormatContext, inputStream->codec->codec);
-        avcodec_parameters_copy(outputStream->codecpar, inputStream->codecpar);
-    }
-
-    for (int i = 0; i < inputFormatContext2->nb_streams; i++) {
-        AVStream* inputStream = inputFormatContext2->streams[i];
-        AVStream* outputStream = avformat_new_stream(outputFormatContext, inputStream->codec->codec);
-        avcodec_parameters_copy(outputStream->codecpar, inputStream->codecpar);
-    }
-
-    if (avio_open(&outputFormatContext->pb, "output.mp4", AVIO_FLAG_WRITE) < 0) {
-        // Handle error
-    }
-
-    if (avformat_write_header(outputFormatContext, nullptr) < 0) {
-        // Handle error
-    }
 
     AVPacket packet;
+    while (av_read_frame(input_format_ctx, &packet) >= 0) {
+        std::cout << "incoming packet with dts " << packet.dts << std::endl;
 
-    while (av_read_frame(inputFormatContext1, &packet) >= 0) {
-        av_interleaved_write_frame(outputFormatContext, &packet);
-        av_packet_unref(&packet);
+        if (packet.dts < last_dts) {
+            packet.dts = last_dts + packet.duration;
+        }
+        if (packet.pts < last_pts) {
+            packet.pts = last_pts + packet.duration;
+        }
+
+        std::cout << "but i will set dts to " << packet.dts << std::endl;
+
+        (*output_format_ctx)->oformat->flags |= AVFMT_NOTIMESTAMPS;
+        int res = av_write_frame(*output_format_ctx, &packet);
+        last_dts = packet.dts;
+        last_pts = packet.pts;
     }
 
-    while (av_read_frame(inputFormatContext2, &packet) >= 0) {
-        av_interleaved_write_frame(outputFormatContext, &packet);
-        av_packet_unref(&packet);
-    }
-    av_write_trailer(outputFormatContext);
-
-    avformat_close_input(&inputFormatContext1);
-    avformat_close_input(&inputFormatContext2);
-    avio_closep(&outputFormatContext->pb);
-
-    avformat_free_context(inputFormatContext1);
-    avformat_free_context(inputFormatContext2);
-    avformat_free_context(outputFormatContext);
+    
 }
 
 void merge_videos(std::list<std::string> cuts_filenames) {
     std::string output_filename = "output.mp4";
 
     AVFormatContext *output_format_ctx = avformat_alloc_context();
-    if (!output_format_ctx) {
-        std::cout << "[ERROR] Couldn't allocate AVFormatContext" << std::endl;
-        exit(1);
-    }
 
-    for (auto cut_filename : cuts_filenames) {
-        std::cout << "appending " << cut_filename << std::endl;
-        // merge_video(cut_filename, output_filename, &output_format_ctx);
-        merge_video();
-        break;
-    }    
+    /* set the muxer */
+    output_format_ctx->oformat = av_guess_format(NULL, output_filename.c_str(), NULL);
+
+    /* create output file */
+    avio_open2(&output_format_ctx->pb, output_filename.c_str(), AVIO_FLAG_WRITE, NULL, NULL);
+    // std::cout << (output_format_ctx->oformat->flags == AVFMT_NOSTREAMS) << std::endl;
+
+    /* get sample input format context, just to copy output params */
+    AVFormatContext *input_format_ctx = avformat_alloc_context();
+    avformat_open_input(&input_format_ctx, "cutted_vid1.mp4", NULL, NULL);
+
+    /* create at least one stream for the output file */
+    AVStream *input_stream = input_format_ctx->streams[0];
+    AVStream *output_stream = avformat_new_stream(output_format_ctx, input_stream->codec->codec);
+    avcodec_copy_context(output_stream->codec, input_stream->codec);
+    output_stream->codec->codec_tag = 0;
+    output_stream->codec->codec_type = input_stream->codec->codec_type;
+    output_stream->codec->codec_id = input_stream->codec->codec_id;
+    output_stream->time_base = input_stream->time_base; // same timebases
+
+    /* initialize the muxer internals and write the file's header */
+    avformat_write_header(output_format_ctx, 0);
+
+
+    std::cout << "appending cutted_vid1.mp4" << std::endl;
+    merge_video("cutted_vid1.mp4", &output_format_ctx);
+
+    std::cout << "appending cutted_vid2.mp4" << std::endl;
+    merge_video("cutted_vid2.mp4", &output_format_ctx);
+
+
+    av_write_trailer(output_format_ctx);
+
+    avformat_free_context(output_format_ctx);
+    avformat_free_context(input_format_ctx);
 }

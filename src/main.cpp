@@ -35,7 +35,8 @@ int main(){
         std::cout << elem->getFilename() << std::endl;
     }
 
-    std::list<std::string> cuts_filenames = cut_videos(distances_list, result_sequence);
+    // std::list<std::string> cuts_filenames = cut_videos(distances_list, result_sequence);
+    std::list<std::string> cuts_filenames;
     merge_videos(cuts_filenames);
 
     return 0;
