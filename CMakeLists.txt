@@ -3,6 +3,7 @@ project(video-edit C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(lib/FFmpeg)
+add_subdirectory(lib/pybind11)
 
 add_definitions(-DGL_SILENCE_DEPRECATION)
 
@@ -14,6 +15,7 @@ list(APPEND SOURCES
     src/concat_demuxer.cpp
     src/calc_durations.cpp
     src/assign_timestamps.cpp
+    src/video_edit_lib.cpp
 )
 
 add_executable(video-edit ${SOURCES})

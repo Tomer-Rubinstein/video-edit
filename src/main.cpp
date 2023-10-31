@@ -7,6 +7,8 @@
 #include "calc_durations.h"
 #include "assign_timestamps.h"
 
+void merge_audio_video(const char *audio_filename, const char *video_filename);
+
 int main(){
     /* INPUT */
     std::string videos_dir = "../sample-input/videos";
@@ -30,6 +32,8 @@ int main(){
     ConcatDemuxer *concat_demuxer = new ConcatDemuxer(cuts_filenames);
 
     concat_demuxer->merge_videos("output.mp4");
+
+    // merge_audio_video("../sample-input/song.mp3", "output.mp4"); 
 
     return 0;
 }

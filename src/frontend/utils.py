@@ -1,6 +1,8 @@
 from pytube import YouTube
 from pydub import AudioSegment
 
+import VideoEdit
+
 
 OUTPUT_AUDIO_FILENAME = "song.mp3"
 
@@ -18,3 +20,12 @@ def download_yt_vid(video_id, start_time, end_time):
     audio = AudioSegment.from_file(OUTPUT_AUDIO_FILENAME)
     cut_audio = audio[start_time:end_time]
     cut_audio.export(OUTPUT_AUDIO_FILENAME, format="mp3") # override the same file
+
+
+def call_video_edit():
+    test = VideoEditLib("","",[0.0])
+    test.run()
+
+# DEBUG
+if __name__ == "__main__":
+    call_video_edit()

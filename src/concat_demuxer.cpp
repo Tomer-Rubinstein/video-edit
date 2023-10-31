@@ -48,17 +48,16 @@ void ConcatDemuxer::merge_videos(const char* output_filename) {
     /* create at least one stream for the output file */
     AVStream *input_stream = input_format_ctx->streams[0];
     AVStream *output_stream = avformat_new_stream(output_format_ctx, input_stream->codec->codec);
-    avcodec_copy_context(output_stream->codec, input_stream->codec);
-    output_stream->codec->codec_tag = 0;
-    output_stream->codec->codec_type = input_stream->codec->codec_type;
-    output_stream->codec->codec_id = input_stream->codec->codec_id;
-    output_stream->time_base = input_stream->time_base; // same timebases
+    AVCodecContext *output_codec_ctx = output_stream->codec;
+    avcodec_copy_context(output_codec_ctx, input_stream->codec);
+    output_codec_ctx->codec_tag = 0;
+    output_codec_ctx->codec_type = input_stream->codec->codec_type;
+    output_codec_ctx->codec_id = input_stream->codec->codec_id;
+    // output_stream->time_base = input_stream->time_base; // same timebases
 
     /* initialize the muxer internals and write the file's header */
     avformat_write_header(output_format_ctx, 0);
-
     output_format_ctx->oformat->flags |= AVFMT_NOTIMESTAMPS;
-
 
     for (int i=0; i < _filenames.size(); i++) {
         std::string curr_video = _filenames[i];
