@@ -5,6 +5,7 @@ from flask import (
 from flask_cors import CORS, cross_origin
 import json
 
+from utils import download_yt_vid
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -27,6 +28,8 @@ def start():
     print("yt_vid_id:", yt_vid_id)
     print("yt_start_time:", yt_start_time)
     print("yt_end_time:", yt_end_time)
+
+    download_yt_vid(yt_vid_id, yt_start_time, yt_end_time)
 
     return jsonify({'success': True}), 200
 
