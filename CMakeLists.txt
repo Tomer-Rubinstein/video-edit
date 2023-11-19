@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
-project(video-edit C CXX)
+project(VideoEdit C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
+find_package(pybind11 REQUIRED)
+
 add_subdirectory(lib/FFmpeg)
-add_subdirectory(lib/pybind11)
 
 add_definitions(-DGL_SILENCE_DEPRECATION)
 
@@ -18,5 +19,12 @@ list(APPEND SOURCES
     src/video_edit_lib.cpp
 )
 
-add_executable(video-edit ${SOURCES})
-target_link_libraries(video-edit FFmpeg)
+# for easier testing, generate executable instead:
+# add_executable(VideoEdit ${SOURCES})
+
+add_library(VideoEditLib STATIC ${SOURCES})
+set_target_properties(VideoEditLib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+pybind11_add_module(VideoEdit src/pywrap.cpp)
+target_link_libraries(VideoEdit PRIVATE VideoEditLib)
+target_link_libraries(VideoEdit PRIVATE FFmpeg)

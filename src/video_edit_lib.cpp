@@ -8,16 +8,23 @@
 #include "calc_durations.h"
 #include "assign_timestamps.h"
 
-VideoEditLib::VideoEditLib(std::string videos_dir_path, std::string song_path, std::vector<float> timestamps) {
-    this->videos_dir_path = videos_dir_path;
-    this->song_path = song_path;
-    this->timestamps = timestamps;
-}
 
-void VideoEditLib::run() {
-    std::cout << "OMG" << std::endl;
-    // std::vector<Video*> videos_list = load_videos(this->videos_dir_path);
-    // std::vector<float> durations_list = calc_durations(this->timestamps);
+/* TODO
+
+Invoked with: ['hello', 'world'], [0.5, 1]
+
+Did you forget to `#include <pybind11/stl.h>`? Or <pybind11/complex.h>,
+<pybind11/functional.h>, <pybind11/chrono.h>, etc. Some automatic
+conversions are optional and require extra headers to be included
+when compiling your pybind11 module.
+
+*/
+void video_edit_run(std::string videos_dir_path, std::vector<float> timestamps) {
+    std::cout << "videos_dir_path: " << videos_dir_path << std::endl;
+    std::cout << "timestamps[0]: " << timestamps[0] << std::endl;
+
+    // std::vector<Video*> videos_list = load_videos(videos_dir_path);
+    // std::vector<float> durations_list = calc_durations(timestamps);
     // std::vector<Video*> matching_sequence = assign_timestamps(durations_list, videos_list);
 
     // std::vector<std::string> cuts_filenames = cut_videos(durations_list, matching_sequence);
