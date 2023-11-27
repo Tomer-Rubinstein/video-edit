@@ -1,9 +1,9 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <iostream>
 #include "video_edit_lib.h"
 
 namespace py = pybind11;
-constexpr auto byref = py::return_value_policy::reference_internal;
 
 PYBIND11_MODULE(VideoEdit, m) {
     m.def("run", &video_edit_run, R"pbdoc(
