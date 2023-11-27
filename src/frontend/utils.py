@@ -1,13 +1,18 @@
+import VideoEdit
 from pytube import YouTube
 from pydub import AudioSegment
-
-import VideoEdit
 
 
 OUTPUT_AUDIO_FILENAME = "song.mp3"
 
 
 def download_yt_vid(video_id, start_time, end_time):
+    """
+    :param video_id: YouTube video ID of the song
+    :param start_time: wanted start time of song to be cut from
+    :param end_time: wanted end time of song to be cut from
+    """
+
     # Download YouTube video as "song.mp3"
     video = YouTube(f"https://youtube.com/watch?v={video_id}")
     stream = video.streams.filter(only_audio=True).first()
@@ -22,10 +27,5 @@ def download_yt_vid(video_id, start_time, end_time):
     cut_audio.export(OUTPUT_AUDIO_FILENAME, format="mp3") # override the same file
 
 
-def call_video_edit():
-    test = VideoEditLib("","",[0.0])
-    test.run()
-
-# DEBUG
-if __name__ == "__main__":
-    call_video_edit()
+def call_video_edit(path_to_videos: str, timestamps: list[float]):
+    VideoEdit.run(path_to_videos, timestamps)
